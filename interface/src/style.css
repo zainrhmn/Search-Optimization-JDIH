@@ -1,0 +1,93 @@
+/* Reset dasar */
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f7f9fc;
+}
+
+/* Full-width header */
+.header {
+  width: 100%;
+  background-color: #8b0000;
+  color: white;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.logo {
+  height: 50px;
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* Kontainer utama */
+.app-container {
+  padding: 20px;
+}
+
+/* Dropdown BAB */
+.dropdown-container {
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+#bab-select {
+  padding: 6px;
+  font-size: 14px;
+  margin-left: 8px;
+}
+
+/* Pasal Strip */
+.pasal-strip-wrapper {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+  gap: 10px;
+}
+
+.pasal-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+}
+
+.pasal-box {
+  padding: 8px 14px;
+  background-color: #e0e7ef;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.pasal-box.active {
+  background-color: #8b0000;
+  color: white;
+}
+
+/* Panah navigasi */
+.arrow-btn {
+  background-color: #d1d5db;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* Ayat content */
+.content-box {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  margin-top: 20px;
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
