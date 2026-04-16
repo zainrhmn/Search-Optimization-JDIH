@@ -4,6 +4,8 @@ body, html {
   padding: 0;
   font-family: Arial, sans-serif;
   background-color: #f7f9fc;
+
+  background-image: url('/public/background.jpeg');
 }
 
 /* Full-width header */
