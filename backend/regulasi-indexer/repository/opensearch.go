@@ -1,4 +1,4 @@
-package main
+package repository
 
 import (
 	"bytes"
@@ -17,10 +17,10 @@ import (
 
 var indexName = "regulasi_index"
 
-func NewOpenSearch() (*opensearch.Client, error) {
+func NewOpenSearch(adr string) (*opensearch.Client, error) {
 	client, err := opensearch.NewClient(opensearch.Config{
 		Addresses: []string{
-			"http://localhost:9200",
+			adr,
 		},
 	})
 
@@ -42,10 +42,10 @@ func Ping(client *opensearch.Client) error {
 	return nil
 }
 
-func SearchRegulasi(client *opensearch.Client, keyword string) ([]string, error) {
-	result := []string{}
+func SearchRegulasi(client *opensearch.Client, keyword string) ([]model.SearchResult, error) {
+	result := []model.SearchResult{}
 	query := map[string]interface{}{
-		"size": 20,
+		"size": 10,
 		"query": map[string]interface{}{
 			"bool": map[string]interface{}{
 				"should": []interface{}{
@@ -54,32 +54,15 @@ func SearchRegulasi(client *opensearch.Client, keyword string) ([]string, error)
 							"query": keyword,
 							"type":  "best_fields",
 							"fields": []string{
-								"nomor_regulasi^6",
-								"tahun^6",
+								"isi^10",
+								"judul_bab^6",
 								"judul_regulasi^5",
-								"judul_bab^4",
-								"pasal^3",
+								"pasal^2",
 								"bagian^2",
-								"isi^1",
-								"full_text^0.5",
+								"nomor_regulasi^1",
+								"tahun^1",
 							},
-							"minimum_should_match": "60%",
-						},
-					},
-					map[string]interface{}{
-						"match_phrase": map[string]interface{}{
-							"judul_regulasi": map[string]interface{}{
-								"query": keyword,
-								"boost": 10,
-							},
-						},
-					},
-					map[string]interface{}{
-						"match_phrase": map[string]interface{}{
-							"full_text": map[string]interface{}{
-								"query": keyword,
-								"boost": 4,
-							},
+							"minimum_should_match": "2<-25% 5<-60%",
 						},
 					},
 				},
@@ -115,13 +98,24 @@ func SearchRegulasi(client *opensearch.Client, keyword string) ([]string, error)
 	for _, h := range hits {
 		hit := h.(map[string]interface{})
 		source := hit["_source"].(map[string]interface{})
-
+		sourceResult := model.SearchResult{}
+		// mongoID
 		idStr, ok := source["mongo_id"].(string)
-		if !ok {
-			continue
+		if ok {
+			sourceResult.MongoID = idStr
 		}
 
-		result = append(result, idStr)
+		// pasal
+		if pasal, ok := source["pasal"].(string); ok {
+			sourceResult.Pasal = pasal
+		}
+
+		// ayat
+		if ayat, ok := source["ayat"].(string); ok {
+			sourceResult.Ayat = ayat
+		}
+
+		result = append(result, sourceResult)
 	}
 
 	return result, nil
@@ -144,6 +138,8 @@ func ParseMongoToOpenSearch(coll *mongo.Collection, client *opensearch.Client) e
 		var doc model.RegulasiMongo
 
 		if err := cursor.Decode(&doc); err != nil {
+			jsonBytes, _ := bson.MarshalExtJSON(doc, true, true)
+			log.Println(string(jsonBytes))
 			log.Printf("Decode error: %v\n", err)
 			continue
 		}
@@ -189,7 +185,7 @@ func transformMongoToIndex(doc model.RegulasiMongo) []model.RegulasiIndex {
 
 			for i, ayatText := range pasal.Ayats {
 
-				ayatNumber := fmt.Sprintf("(%d)", i+1)
+				ayatNumber := fmt.Sprintf("%d", i+1)
 
 				id := fmt.Sprintf("%d_%d_pasal_%d_ayat_%d",
 					doc.Nomor,
@@ -217,7 +213,7 @@ func transformMongoToIndex(doc model.RegulasiMongo) []model.RegulasiIndex {
 
 					Bab:      fmt.Sprintf("%v", bab.Number),
 					JudulBab: bab.Title,
-					Pasal:    fmt.Sprintf("Pasal %d", pasal.Number),
+					Pasal:    fmt.Sprintf("%d", pasal.Number),
 					Bagian:   bagian,
 					Ayat:     ayatNumber,
 
@@ -252,4 +248,25 @@ func bulkIndex(client *opensearch.Client, index string, docs []model.RegulasiInd
 	defer res.Body.Close()
 
 	return nil
+}
+
+func ExtractMongoIDs(inputs []model.SearchResult) []string {
+	seen := make(map[string]struct{})
+	var ids []string
+
+	for _, item := range inputs {
+		if item.MongoID == "" {
+			continue
+		}
+
+		// 🔥 remove duplicates
+		if _, exists := seen[item.MongoID]; exists {
+			continue
+		}
+
+		seen[item.MongoID] = struct{}{}
+		ids = append(ids, item.MongoID)
+	}
+
+	return ids
 }

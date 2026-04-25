@@ -15,9 +15,9 @@ type RegulasiMongo struct {
 }
 
 type Bab struct {
-	Number interface{} `bson:"number"`
-	Title  string      `bson:"title"`
-	Pasals []Pasal     `bson:"pasals"`
+	Number int     `bson:"number"`
+	Title  string  `bson:"title"`
+	Pasals []Pasal `bson:"pasals"`
 }
 
 type Pasal struct {

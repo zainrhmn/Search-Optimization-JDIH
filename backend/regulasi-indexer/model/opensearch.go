@@ -17,3 +17,9 @@ type RegulasiIndex struct {
 	Isi      string `json:"isi"`
 	FullText string `json:"full_text"`
 }
+
+type SearchResult struct {
+	MongoID string `json:"mongo_id"`
+	Pasal   string `json:"pasal"`
+	Ayat    string `json:"ayat"`
+}
