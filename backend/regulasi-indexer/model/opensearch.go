@@ -19,7 +19,8 @@ type RegulasiIndex struct {
 }
 
 type SearchResult struct {
-	MongoID string `json:"mongo_id"`
-	Pasal   string `json:"pasal"`
-	Ayat    string `json:"ayat"`
+	MongoID    string `json:"mongo_id"`
+	Pasal      string `json:"pasal"`
+	PasalTitle string `json:"pasal_title"`
+	Ayat       string `json:"ayat"`
 }

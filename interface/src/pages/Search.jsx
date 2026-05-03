@@ -1,4 +1,4 @@
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import SearchBar from "../components/SearchBar";
 
@@ -66,8 +66,9 @@ export default function Search() {
       {/* HEADER */}
       <div className="sticky top-0 z-20 backdrop-blur-md bg-black/20 border-b border-white/10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center gap-4">
-
-          <img src="/logo.png" className="w-25" />
+          <Link to="/" className="cursor-pointer">
+            <img src="/logo.png" className="w-25" />
+          </Link>
 
           <div className="flex-1">
             <SearchBar
@@ -134,7 +135,9 @@ export default function Search() {
                 <div key={i} className="mb-10">
 
                   <h2 className="text-xl font-semibold text-gray-800 mb-5 border-b pb-2">
-                    BAB {bab.number} — {bab.title}
+                    {bab.title?.trim() && (
+                      <div>{`BAB ${bab.number} — ${bab.title}`}</div>
+                    )}
                   </h2>
 
                   {/* Pasals */}
@@ -152,7 +155,7 @@ export default function Search() {
                         className="mb-8 border-l-4 border-[var(--color-kpu-gold)] pl-5"
                       >
                         <h3 className="text-lg font-bold text-gray-800 mb-3">
-                          Pasal {pasal.nomor}
+                          {pasal.title}
                         </h3>
 
                         <div className="space-y-2">

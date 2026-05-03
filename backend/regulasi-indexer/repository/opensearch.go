@@ -5,7 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -54,15 +56,12 @@ func SearchRegulasi(client *opensearch.Client, keyword string) ([]model.SearchRe
 							"query": keyword,
 							"type":  "best_fields",
 							"fields": []string{
-								"isi^10",
-								"judul_bab^6",
 								"judul_regulasi^5",
-								"pasal^2",
+								"judul_bab^4",
 								"bagian^2",
-								"nomor_regulasi^1",
-								"tahun^1",
+								"isi^1",
 							},
-							"minimum_should_match": "2<-25% 5<-60%",
+							"minimum_should_match": "70%",
 						},
 					},
 				},
@@ -124,6 +123,9 @@ func SearchRegulasi(client *opensearch.Client, keyword string) ([]model.SearchRe
 func ParseMongoToOpenSearch(coll *mongo.Collection, client *opensearch.Client) error {
 	ctx := context.Background()
 
+	// flush existing data
+	FlushEntireIndex(ctx, client, indexName)
+
 	cursor, err := coll.Find(ctx, bson.M{})
 	if err != nil {
 		return err
@@ -172,6 +174,32 @@ func ParseMongoToOpenSearch(coll *mongo.Collection, client *opensearch.Client) e
 	return nil
 }
 
+func FlushEntireIndex(ctx context.Context, client *opensearch.Client, indexName string) error {
+	reqBody := strings.NewReader(`{
+		"query": {
+			"match_all": {}
+		}
+	}`)
+
+	res, err := client.DeleteByQuery(
+		[]string{indexName},
+		reqBody)
+	if err != nil {
+		return err
+	}
+
+	defer res.Body.Close()
+
+	if res.IsError() {
+		body, _ := io.ReadAll(res.Body)
+		return fmt.Errorf("delete by query failed: %s", body)
+	}
+
+	body, _ := io.ReadAll(res.Body)
+	fmt.Println("✅ Flushed data:", string(body))
+	return nil
+}
+
 func transformMongoToIndex(doc model.RegulasiMongo) []model.RegulasiIndex {
 	var results []model.RegulasiIndex
 
@@ -194,15 +222,6 @@ func transformMongoToIndex(doc model.RegulasiMongo) []model.RegulasiIndex {
 					i+1,
 				)
 
-				fullText := fmt.Sprintf("%s %v %s Pasal %d %s %s",
-					doc.Title,
-					bab.Number,
-					bab.Title,
-					pasal.Number,
-					ayatNumber,
-					ayatText,
-				)
-
 				results = append(results, model.RegulasiIndex{
 					ID:            id,
 					MongoID:       doc.ID.Hex(),
@@ -217,8 +236,7 @@ func transformMongoToIndex(doc model.RegulasiMongo) []model.RegulasiIndex {
 					Bagian:   bagian,
 					Ayat:     ayatNumber,
 
-					Isi:      ayatText,
-					FullText: fullText,
+					Isi: ayatText,
 				})
 			}
 		}

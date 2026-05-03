@@ -32,6 +32,7 @@ type Ayat struct {
 
 type Pasal struct {
 	Nomor string `json:"nomor"`
+	Title string `json:"title"`
 	Ayats []Ayat `json:"ayats"`
 }
 
@@ -158,6 +159,7 @@ func buildResponse(searchResults []model.SearchResult, mongoDocs []model.Regulas
 
 				pasal := Pasal{
 					Nomor: pasalNumber,
+					Title: p.Title,
 				}
 
 				hasMatch := false
